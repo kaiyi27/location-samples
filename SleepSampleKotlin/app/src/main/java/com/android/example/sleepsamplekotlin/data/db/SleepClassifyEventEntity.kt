@@ -19,6 +19,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.android.gms.location.SleepClassifyEvent
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * Entity class (table version of the class) for [SleepClassifyEvent] which represents a sleep
@@ -30,7 +33,10 @@ import com.google.android.gms.location.SleepClassifyEvent
 data class SleepClassifyEventEntity(
     @PrimaryKey
     @ColumnInfo(name = "time_stamp_seconds")
-    val timestampSeconds: Int,
+    val timestampSeconds: Long,
+
+    @ColumnInfo(name = "sgt_time")
+    val sgtTime: String,
 
     @ColumnInfo(name = "confidence")
     val confidence: Int,
@@ -42,13 +48,24 @@ data class SleepClassifyEventEntity(
     val light: Int
 ) {
     companion object {
+        fun epochToSGT(epochMillis: Long): String {
+            return Instant.ofEpochMilli(epochMillis)
+                .atZone(ZoneId.of("Asia/Singapore"))
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        }
+
         fun from(sleepClassifyEvent: SleepClassifyEvent): SleepClassifyEventEntity {
             return SleepClassifyEventEntity(
-                timestampSeconds = (sleepClassifyEvent.timestampMillis / 1000).toInt(),
+                timestampSeconds = sleepClassifyEvent.timestampMillis,
+                sgtTime = epochToSGT(sleepClassifyEvent.timestampMillis),
                 confidence = sleepClassifyEvent.confidence,
                 motion = sleepClassifyEvent.motion,
                 light = sleepClassifyEvent.light
             )
         }
+    }
+
+    override fun toString(): String {
+        return "SleepClassifyEventEntity(timestamp=$sgtTime, light=$light, motion=$motion, confidence=$confidence)"
     }
 }

@@ -19,6 +19,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.android.gms.location.SleepSegmentEvent
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * Data class for Sleep Segment Events which represents the time the user slept at night.
@@ -29,6 +32,12 @@ data class SleepSegmentEventEntity(
     @ColumnInfo(name = "start_time_millis")
     val startTimeMillis: Long,
 
+    @ColumnInfo(name = "start_time")
+    val startTime: String,
+
+    @ColumnInfo(name = "end_time")
+    val endTime: String,
+
     @ColumnInfo(name = "end_time_millis")
     val endTimeMillis: Long,
 
@@ -36,12 +45,24 @@ data class SleepSegmentEventEntity(
     val status: Int
 ) {
     companion object {
+        fun epochToSGT(epochMillis: Long): String {
+            return Instant.ofEpochMilli(epochMillis)
+                .atZone(ZoneId.of("Asia/Singapore"))
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        }
+
         fun from(sleepSegmentEvent: SleepSegmentEvent): SleepSegmentEventEntity {
             return SleepSegmentEventEntity(
                 startTimeMillis = sleepSegmentEvent.startTimeMillis,
                 endTimeMillis = sleepSegmentEvent.endTimeMillis,
+                startTime = epochToSGT(sleepSegmentEvent.startTimeMillis),
+                endTime = epochToSGT(sleepSegmentEvent.endTimeMillis),
                 status = sleepSegmentEvent.status
             )
         }
+    }
+
+    override fun toString(): String {
+        return "SleepSegmentEventEntity(startTime=$startTime, endTime=$endTime, status=$status)"
     }
 }

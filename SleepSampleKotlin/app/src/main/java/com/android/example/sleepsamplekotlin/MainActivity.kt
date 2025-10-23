@@ -26,8 +26,11 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.android.example.sleepsamplekotlin.databinding.ActivityMainBinding
@@ -36,6 +39,9 @@ import com.google.android.gms.location.ActivityRecognition
 import com.google.android.gms.location.SleepSegmentRequest
 import com.google.android.material.snackbar.Snackbar
 import java.util.Calendar
+import kotlinx.coroutines.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * Demos Android's Sleep APIs; subscribe/unsubscribe to sleep data, save that data, and display it.
@@ -43,6 +49,7 @@ import java.util.Calendar
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var progressDialog: AlertDialog
 
     private val mainViewModel: MainViewModel by lazy {
         MainViewModel((application as MainApplication).repository)
@@ -68,10 +75,54 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var sleepPendingIntent: PendingIntent
 
+    private val createFileLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument()
+    ) { uri ->
+        if (uri != null) {
+            val output = StringBuilder("Type,StartTime,EndTime,Data\n")
+
+            // Export Sleep Segment data
+            mainViewModel.allSleepSegments.value?.forEach { segment ->
+                output.append("Segment,${segment.startTime},${segment.endTime},${segment.status}\n")
+            }
+
+            // Export Sleep Classify Event data
+            mainViewModel.allSleepClassifyEventEntities.value?.forEach { classify ->
+                output.append("Classify,${classify.sgtTime},${classify.sgtTime},light=${classify.light} motion=${classify.motion} conf=${classify.confidence}\n")
+            }
+
+            this@MainActivity.writeTextToUri(uri, output.toString(), object : FileWriterProgressListener {
+                override fun onWritingStarted() {
+                    progressDialog.show()
+                }
+
+                override fun onWritingCompleted() {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@MainActivity, "File saved successfully!", Toast.LENGTH_LONG).show()
+                }
+
+                override fun onErrorWriting(message: String) {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@MainActivity, "Error writing file: $message", Toast.LENGTH_LONG).show()
+                }
+            })
+        } else {
+            Toast.makeText(this@MainActivity, "Export canceled", Toast.LENGTH_LONG).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
+        progressDialog = AlertDialog.Builder(this)
+            .setView(ProgressBar(this).apply {
+                isIndeterminate = true
+            })
+            .setTitle("Saving...")
+            .setMessage("Please wait while the file is being saved.")
+            .setCancelable(false)
+            .create()
         setContentView(binding.root)
 
         mainViewModel.subscribedToSleepDataLiveData.observe(this) { newSubscribedToSleepData ->
@@ -113,6 +164,14 @@ class MainActivity : AppCompatActivity() {
 
         sleepPendingIntent =
             SleepReceiver.createSleepReceiverPendingIntent(context = applicationContext)
+
+        binding.buttonExportCsv.setOnClickListener {
+            // Open file picker for user to choose location and filename
+            val current = LocalDateTime.now()
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            val formattedDate = current.format(formatter)
+            createFileLauncher.launch("${formattedDate} - sleep data.csv")
+        }
     }
 
     fun onClickRequestSleepData(view: View) {
