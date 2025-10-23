@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
                 // Constructor isn't accessible for [SleepSegmentEvent], so we just output the
                 // database table version.
                 sleepSegmentOutput = sleepSegmentEventEntities.joinToString {
-                    "\t$it\n"
+                    "\n$it\n"
                 }
                 updateOutput()
             }
@@ -156,7 +156,7 @@ class MainActivity : AppCompatActivity() {
                 // Constructor isn't accessible for [SleepClassifyEvent], so we just output the
                 // database table version.
                 sleepClassifyOutput = sleepClassifyEventEntities.joinToString {
-                    "\t$it\n"
+                    "\n$it\n"
                 }
                 updateOutput()
             }
