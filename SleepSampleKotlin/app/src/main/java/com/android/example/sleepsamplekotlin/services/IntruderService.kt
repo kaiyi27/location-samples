@@ -1,6 +1,8 @@
 package com.android.example.sleepsamplekotlin.services
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -21,6 +23,7 @@ class IntruderService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     val CHANNEL_ID = "1000"
+    val CHANNEL_NAME = "Intruder Protection Service"
     val TAG = "DEBUG"
 
     private lateinit var sleepPendingIntent: PendingIntent
@@ -55,68 +58,61 @@ class IntruderService : Service() {
         }
     }
 
-    override fun onCreate() {
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Channel for intruder protection service"
+            }
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 
+    override fun onCreate() {
         super.onCreate()
+        
+        // Create notification channel before building notification
+        createNotificationChannel()
 
         sleepPendingIntent =
             SleepReceiver.createSleepReceiverPendingIntent(context = applicationContext)
         // Do one-time setup here if needed
-
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Ensure notification channel exists (safety check)
+        createNotificationChannel()
+        
+        // Start in foreground IMMEDIATELY - must be called within 5 seconds of startForegroundService()
+        // Build a simple notification first to ensure we meet the deadline
+        val simpleNotification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Intruder protection active")
+            .setContentText("Service Montoring Sleep Segment Events")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
 
-        // Build the ongoing notification
-
-        val notification = buildNotification()
-
-        // Start in foreground ASAP
-
-        startForeground(NOTIFICATION_ID, notification, foregroundServiceType=ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        // For Android 12+ (API 31+), we need to specify the foreground service type
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            startForeground(
+                NOTIFICATION_ID,
+                simpleNotification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, simpleNotification)
+        }
+        Log.d(TAG, "Foreground service started successfully")
 
         subscribeToSleepSegmentUpdates(applicationContext, sleepPendingIntent)
 
         // If system kills the service, recreate it with a null intent
-
         return START_STICKY
-
-    }
-
-    private fun buildNotification(): Notification {
-
-        // Tap action -> open your main activity
-
-        val pendingIntent = PendingIntent.getActivity(
-
-            this,
-
-            0,
-
-            Intent(this, MainActivity::class.java),
-
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-
-        )
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-
-            .setContentTitle("Intruder protection active")
-
-            .setContentText("Monitoring intruder events. Tap for details.")
-
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-
-            .setContentIntent(pendingIntent)
-
-            .setOngoing(true)                       // 🔴 Mark as ongoing
-
-            .setCategory(Notification.CATEGORY_SERVICE)
-
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-
-            .build()
-
     }
 
     override fun onDestroy() {

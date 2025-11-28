@@ -20,13 +20,13 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.android.example.sleepsamplekotlin"
         minSdkVersion 29
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 1
         versionName "1.0"
 
@@ -51,6 +51,13 @@ android {
     }
 }
 
+kapt {
+    javacOptions {
+        option("-Xmaxerrs", 500)
+    }
+    correctErrorTypes = true
+}
+
 dependencies {
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -63,10 +70,10 @@ dependencies {
     implementation 'androidx.activity:activity-ktx:1.2.0-rc01'
 
     // Room components
-    implementation "androidx.room:room-ktx:2.2.6"
-    implementation 'androidx.room:room-runtime:2.2.6'
-    kapt "androidx.room:room-compiler:2.2.6"
-    androidTestImplementation "androidx.room:room-testing:2.2.6"
+    implementation "androidx.room:room-ktx:2.4.3"
+    implementation 'androidx.room:room-runtime:2.4.3'
+    kapt "androidx.room:room-compiler:2.4.3"
+    androidTestImplementation "androidx.room:room-testing:2.4.3"
 
     // DataStore components
     implementation "androidx.datastore:datastore-preferences:1.0.0-alpha06"

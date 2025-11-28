@@ -176,11 +176,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onClickRequestSleepData(view: View) {
+    
         if (activityRecognitionPermissionApproved()) {
-            if (subscribedToSleepData) {
+            // Start the intruder service
+            if (!subscribedToSleepData) {
+                // Start the intruder service
                 IntruderService.start(this)
+                mainViewModel.updateSubscribedToSleepData(true)
             } else {
                 IntruderService.stop(this)
+                mainViewModel.updateSubscribedToSleepData(false)
             }
         } else {
             requestPermissionLauncher.launch(permission.ACTIVITY_RECOGNITION)
