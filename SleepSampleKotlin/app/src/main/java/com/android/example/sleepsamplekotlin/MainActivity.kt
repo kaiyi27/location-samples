@@ -35,6 +35,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.android.example.sleepsamplekotlin.databinding.ActivityMainBinding
 import com.android.example.sleepsamplekotlin.receiver.SleepReceiver
+import com.android.example.sleepsamplekotlin.services.IntruderService
 import com.google.android.gms.location.ActivityRecognition
 import com.google.android.gms.location.SleepSegmentRequest
 import com.google.android.material.snackbar.Snackbar
@@ -177,9 +178,9 @@ class MainActivity : AppCompatActivity() {
     fun onClickRequestSleepData(view: View) {
         if (activityRecognitionPermissionApproved()) {
             if (subscribedToSleepData) {
-                unsubscribeToSleepSegmentUpdates(applicationContext, sleepPendingIntent)
+                IntruderService.start(this)
             } else {
-                subscribeToSleepSegmentUpdates(applicationContext, sleepPendingIntent)
+                IntruderService.stop(this)
             }
         } else {
             requestPermissionLauncher.launch(permission.ACTIVITY_RECOGNITION)
