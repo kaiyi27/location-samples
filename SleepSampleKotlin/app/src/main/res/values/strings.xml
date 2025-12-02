@@ -15,7 +15,7 @@
      limitations under the License.
 -->
 <resources>
-    <string name="app_name">SleepSampleKotlin</string>
+    <string name="app_name">Sleep API</string>
     <string name="default_greeting_message">Click on the button below to subscribe to Sleep Transitions!</string>
     <string name="sleep_button_subscribe_text">Subscribe to Sleep Data</string>
     <string name="sleep_button_unsubscribe_text">Unsubscribe to Sleep Data</string>
